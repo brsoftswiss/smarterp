@@ -210,7 +210,7 @@ Kern-Tabellen (Präfix `fibu_`):
   **Fiscal Year/Period Closing** analog.
 
 **Test-Harness** (`tooling/erpnext-parity/`):
-1. Echte ERPNext-Instanz bereitstellen (Docker/`frappe_docker`).
+1. ✅ Echte ERPNext-Instanz bereitgestellt: `tooling/erpnext-parity/` (Docker, `frappe/erpnext:v16.53.0`, REST unter http://localhost:8081, Login `Administrator`/`admin`).
 2. Satz von Geschäftsfällen definieren (Fixtures): Einkaufsrechnung, Zahlung mit
    Skonto, Gutschrift, Storno, MwSt-Abrechnung, Jahresabschluss, FW-Kursbewertung …
 3. Jeden Fall in **beiden** Systemen buchen (ERPNext via REST-API, smarterp via eigene API).
@@ -218,7 +218,7 @@ Kern-Tabellen (Präfix `fibu_`):
 5. Abweichungen = Bugs oder bewusste CH-Spezifika (dokumentieren).
 
 **Offene Punkte für die Parität** (später zu klären):
-- ERPNext-Version + Deployment-Weg (Docker vs. bestehend)?
+- ~~ERPNext-Version + Deployment-Weg?~~ **Erledigt**: v16.53.0 via `tooling/erpnext-parity/` (Docker). Die Quelle `C:\Projekte\GitProjekte\erpnext` ist `develop` (v17-dev) → bei Bedarf später eigenes Image daraus.
 - Welche CH-Spezifika weichen bewusst von ERPNext ab (QR-Rechnung, ESTV-MwSt-Formular,
   CAMT.053/PAIN.001, Saldosteuersatz)? Diese haben in ERPNext kein 1:1-Pendant.
 - Mapping des Schweizer Kontenrahmens (KMU) auf ERPNext-CoA.
@@ -298,8 +298,9 @@ Kern-Tabellen (Präfix `fibu_`):
 
 1. ✅ GL-Modell (Double-Entry) + Posting in `backend/src/accounting/` (money/types/posting/kreditoren).
 2. ✅ Kreditoren-Beleg → verbuchen → GL Entries (reine Engine + DB-Schicht), verifiziert (`npm run accounting:verify`).
-3. ERPNext-Deployment/Version mit Nutzer klären (§7, Repo `C:\Projekte\GitProjekte\erpnext`), damit der Parity-Harness stehen kann.
-4. REST-Endpunkt für die Kreditoren-Verbuchung (zusammen mit der M4-Frontend-Extraktion).
+3. ✅ ERPNext-Orakel bereitgestellt (§7, `tooling/erpnext-parity/`, v16.53.0 @ localhost:8081).
+4. Parity-Harness bauen: Kreditoren-Einkaufsrechnung in ERPNext (REST) **und** smarterp buchen, GL Entries normalisieren und diffen; Konten-/Steuer-Mapping CH-KMU ↔ ERPNext-CoA definieren.
+5. REST-Endpunkt für die Kreditoren-Verbuchung (zusammen mit der M4-Frontend-Extraktion).
 
 ## 12. Änderungsprotokoll
 
@@ -315,3 +316,7 @@ Kern-Tabellen (Präfix `fibu_`):
   (Aufwand/Vorsteuer an Kreditoren 2000), atomare Buchungsnummern (BU-JJJJ-NNNNN), Methoden effektiv/Saldosteuersatz,
   Gutschrift, FW-Kurs. Verifiziert via `npm run accounting:verify` (4 GL-Zeilen, Salden ausgeglichen, idempotent).
   Offen: REST-Endpunkt + ERPNext-Parity-Harness.
+- **2026-10-30 — ERPNext-Orakel (§7)**: `tooling/erpnext-parity/` (docker-compose + README), basiert auf
+  frappe_docker/pwd.yml mit `frappe/erpnext:v16.53.0`, Frontend-Port 8081 (8080 = Supabase). Instanz läuft,
+  REST erreichbar (ping→pong, Login Administrator/admin; frappe 16.54.0 / erpnext 16.53.0). DB/Redis nur
+  Compose-intern. Nächster Schritt: Parity-Harness (Kreditoren → GL-Diff).
