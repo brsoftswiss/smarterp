@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import { config } from './config.js';
 import { ping } from './db/pool.js';
+import { registerRoutes } from './routes/index.js';
 
 const app = Fastify({ logger: true });
 
@@ -18,6 +19,9 @@ app.get('/health', async (_req, reply) => {
     time: new Date().toISOString(),
   });
 });
+
+// Fibu-REST-API unter /api (vom Frontend über den Vite-Proxy erreichbar).
+await app.register(registerRoutes, { prefix: '/api' });
 
 async function start(): Promise<void> {
   try {
