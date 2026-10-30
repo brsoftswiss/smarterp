@@ -2,7 +2,7 @@
 
 > Architektur- und Planungsdokument. Stand: 2026-10-30.
 > Dieses Dokument ist die Grundlage für die folgenden Umsetzungs-Sessions.
-> **Fortschritt:** M0 (Plan) und M1 (Monorepo & Skelett) sind umgesetzt — siehe §8/§12.
+> **Fortschritt:** M0 (Plan), M1 (Monorepo & Skelett) und M2 (Datenmodell) sind umgesetzt — siehe §8/§12.
 
 ---
 
@@ -234,11 +234,12 @@ Kern-Tabellen (Präfix `fibu_`):
   MariaDB-Verbindung (mysql2), `/health`, Migrations-Runner. MariaDB per docker-compose.
   Verifiziert: beide Builds grün, DB healthy, `/health` → `{status:ok, db:true}`.
 
-- **M2 — Datenmodell** *(als nächstes)*
-  Fibu-Migrationen lesen → MariaDB-Schema (Kern-Tabellen aus §6). Seed für 1 Testmandant
-  inkl. Kontenplan + MwSt-Codes.
+- **M2 — Datenmodell** ✅
+  Fibu-Migrationen gelesen → MariaDB-Schema (28 Kern-Tabellen, `backend/migrations/0001_fibu_core_schema.sql`).
+  Idempotenter Seed-Runner (`npm run seed`) mit Testmandant inkl. CH-KMU-Kontenplan (56 Konten) + 11 MwSt-Codes.
+  Verifiziert: migrate + seed grün gegen MariaDB, CHECK-Constraints greifen.
 
-- **M3 — Buchungs-Engine (Kern)**
+- **M3 — Buchungs-Engine (Kern)** *(als nächstes)*
   GL-Modell + Double-Entry-Posting. Kreditoren-Beleg erfassen → verbuchen → GL.
   Erste ERPNext-Parität für diesen Fall.
 
@@ -286,13 +287,11 @@ Kern-Tabellen (Präfix `fibu_`):
 
 ---
 
-## 11. Nächster konkreter Schritt (M2 — Datenmodell)
+## 11. Nächster konkreter Schritt (M3 — Buchungs-Engine)
 
-1. Die ~60 Fibu-Migrationen (`mailflow/supabase/migrations/*fibu*.sql`) lesen und das
-   Kern-Schema (§6) als erste echte MariaDB-Migrationen unter `backend/migrations/`
-   ableiten (`0001_…`), inkl. der Portierungshinweise aus §6.
-2. Seed für **einen Testmandanten** inkl. Kontenplan + MwSt-Codes.
-3. ERPNext-Deployment/Version mit Nutzer klären (§7), damit der Parity-Harness in M3 stehen kann.
+1. GL-Modell (Double-Entry) + Posting in `backend/src/accounting/` aufbauen — GL Entry als zentrale Wahrheit.
+2. Kreditoren-Beleg erfassen → verbuchen → GL Entries (erster Geschäftsfall), inkl. REST-Endpunkt.
+3. ERPNext-Deployment/Version mit Nutzer klären (§7), damit der Parity-Harness stehen kann.
 
 ## 12. Änderungsprotokoll
 
@@ -300,3 +299,6 @@ Kern-Tabellen (Präfix `fibu_`):
 - **2026-10-30 — M1**: Monorepo (`frontend/` + `backend/`), Tailwind v4, Fastify + mysql2 +
   `/health` + Migrations-Runner, `docker-compose.yml` (MariaDB 11.4), Root-Workspaces & Skripte.
   Scaffold-Commit in den Branch gemergt. End-to-end verifiziert.
+- **2026-10-30 — M2**: MariaDB-Kernschema (28 Tabellen, `backend/migrations/0001_fibu_core_schema.sql`) aus den
+  mailflow-Fibu-Migrationen portiert; idempotenter Seed-Runner (`npm run seed`) mit Testmandant,
+  CH-KMU-Kontenplan (56 Konten) und 11 MwSt-Codes. migrate + seed gegen MariaDB verifiziert.
