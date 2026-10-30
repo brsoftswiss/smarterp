@@ -4,7 +4,8 @@
 > Dieses Dokument ist die Grundlage für die folgenden Umsetzungs-Sessions.
 > **Fortschritt:** M0 (Plan), M1 (Monorepo & Skelett), M2 (Datenmodell) und M3-Kern (Buchungs-Engine,
 > Kreditoren-Verbuchung) sind umgesetzt. Das ERPNext-Paritäts-Orakel läuft und der erste Abgleich
-> (Kreditoren → GL) ist belegt — siehe §7/§8/§12.
+> (Kreditoren → GL) ist belegt. M4 ist angelaufen: erste Scheibe (REST-API + Kreditoren-Pages) läuft
+> end-to-end — siehe §7/§8/§12.
 
 ---
 
@@ -246,9 +247,13 @@ Kern-Tabellen (Präfix `fibu_`):
   ERPNext-Parität für den Kreditoren-Fall belegt (`npm run accounting:parity`, §7) — identische GL-Salden.
   Offen: weitere Paritätsfälle (Zahlung/Skonto, Gutschrift, Storno …) und der REST-Endpunkt (mit M4).
 
-- **M4 — Frontend-Extraktion**
-  Erste Pages (Kreditoren-Dashboard, Lieferanten, Rechnung erfassen) nach smarterp,
-  Datenschicht auf REST, von Supabase/mailflow entkoppelt. End-to-end lauffähig.
+- **M4 — Frontend-Extraktion** 🟡 *(erste Scheibe end-to-end)*
+  Backend-REST unter `/api` (Fastify, Port 3001): Mandanten, Kontenplan, MwSt-Codes,
+  Lieferanten (CRUD), Kreditoren-Belege (Liste/Detail/Erfassen→Verbuchen).
+  Frontend `frontend/src/fibu/` (React 19, Tailwind v4, react-router): schlanke REST-Datenschicht
+  (ersetzt supabase-js) + Pages Dashboard, Lieferanten, Rechnung erfassen; Mandanten-Kontext.
+  End-to-end verifiziert (React → Vite-Proxy → Fastify → MariaDB; Beleg erfasst + verbucht).
+  Offen: weitere Pages (OP-Liste, Zahlung, Journal), Auth/Rollen (M6), QR-Scan/PDF, react-query.
 
 - **M5 — Breite**
   Debitoren, Zahlungslauf (PAIN.001), OP-Liste, MwSt-Abrechnung, Auswertungen.
@@ -322,6 +327,11 @@ Kern-Tabellen (Präfix `fibu_`):
   frappe_docker/pwd.yml mit `frappe/erpnext:v16.53.0`, Frontend-Port 8081 (8080 = Supabase). Instanz läuft,
   REST erreichbar (ping→pong, Login Administrator/admin; frappe 16.54.0 / erpnext 16.53.0). DB/Redis nur
   Compose-intern. Nächster Schritt: Parity-Harness (Kreditoren → GL-Diff).
+- **2026-10-30 — M4 (Scheibe 1)**: Backend-REST `/api` (routes/mandanten|stammdaten|kreditoren,
+  Fastify, Port 3001 wegen mailflow auf 3000) + Frontend `frontend/src/fibu/` (REST-Client statt
+  supabase-js, MandantContext, Shell, Pages Dashboard/Lieferanten/RechnungErfassen, Tailwind v4,
+  react-router-dom). Kreditoren-Beleg über die UI erfasst → verbucht → im Dashboard sichtbar
+  (React → Vite-Proxy → Fastify → MariaDB verifiziert).
 - **2026-10-30 — Parity-Harness (§7)**: `backend/src/accounting/parity/` (erpnext.ts REST-Client,
   case.ts Fall+Mapping, run.ts Orchestrierung) + Skript `npm run accounting:parity`. Bucht die
   Kreditoren-Einkaufsrechnung in ERPNext (Purchase Invoice, per-Item-Vorsteuer 8.1/2.6 %) und in
