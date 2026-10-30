@@ -8,7 +8,8 @@
     "build": "tsc -b",
     "start": "node dist/server.js",
     "migrate": "tsx src/db/migrate.ts",
-    "seed": "tsx src/db/seed.ts"
+    "seed": "tsx src/db/seed.ts",
+    "accounting:verify": "tsx src/accounting/verify.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.3",

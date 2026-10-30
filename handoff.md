@@ -2,7 +2,8 @@
 
 > Architektur- und Planungsdokument. Stand: 2026-10-30.
 > Dieses Dokument ist die Grundlage für die folgenden Umsetzungs-Sessions.
-> **Fortschritt:** M0 (Plan), M1 (Monorepo & Skelett) und M2 (Datenmodell) sind umgesetzt — siehe §8/§12.
+> **Fortschritt:** M0 (Plan), M1 (Monorepo & Skelett), M2 (Datenmodell) und M3-Kern (Buchungs-Engine,
+> Kreditoren-Verbuchung) sind umgesetzt — siehe §8/§12.
 
 ---
 
@@ -239,9 +240,10 @@ Kern-Tabellen (Präfix `fibu_`):
   Idempotenter Seed-Runner (`npm run seed`) mit Testmandant inkl. CH-KMU-Kontenplan (56 Konten) + 11 MwSt-Codes.
   Verifiziert: migrate + seed grün gegen MariaDB, CHECK-Constraints greifen.
 
-- **M3 — Buchungs-Engine (Kern)** *(als nächstes)*
-  GL-Modell + Double-Entry-Posting. Kreditoren-Beleg erfassen → verbuchen → GL.
-  Erste ERPNext-Parität für diesen Fall.
+- **M3 — Buchungs-Engine (Kern)** 🟡 *(Kern erledigt; ERPNext-Parität offen)*
+  GL-Modell + Double-Entry-Posting in `backend/src/accounting/`. Kreditoren-Beleg → verbuchen → GL Entries,
+  1:1 aus mailflows `fibu_kreditoren_verbuchen` portiert. Verifiziert via `npm run accounting:verify`.
+  Offen: REST-Endpunkt (mit M4) und ERPNext-Parity-Harness (§7, braucht laufende ERPNext-Instanz).
 
 - **M4 — Frontend-Extraktion**
   Erste Pages (Kreditoren-Dashboard, Lieferanten, Rechnung erfassen) nach smarterp,
@@ -271,6 +273,11 @@ Kern-Tabellen (Präfix `fibu_`):
 
 ## 10. Wichtige Dateipfade (Referenz)
 
+**Arbeitspfade (lokal, Windows)**
+- smarterp (dieses Repo): `C:\Projekte\GitProjekte\smarterp`
+- ERPNext (Parity-Orakel, §7): `C:\Projekte\GitProjekte\erpnext`
+- mailflow (Quelle Frontend + Fibu-Logik): `C:\Projekte\GitProjekte\Artis\mailflow`
+
 **Quelle (mailflow)**
 - Datenschicht: `src/modules/fibu/api/index.js`
 - Shell/Nav: `src/modules/fibu/components/layout/FiBuShell.jsx`, `FiBuSidebar.jsx`
@@ -287,11 +294,12 @@ Kern-Tabellen (Präfix `fibu_`):
 
 ---
 
-## 11. Nächster konkreter Schritt (M3 — Buchungs-Engine)
+## 11. Nächster konkreter Schritt (M3 → M4)
 
-1. GL-Modell (Double-Entry) + Posting in `backend/src/accounting/` aufbauen — GL Entry als zentrale Wahrheit.
-2. Kreditoren-Beleg erfassen → verbuchen → GL Entries (erster Geschäftsfall), inkl. REST-Endpunkt.
-3. ERPNext-Deployment/Version mit Nutzer klären (§7), damit der Parity-Harness stehen kann.
+1. ✅ GL-Modell (Double-Entry) + Posting in `backend/src/accounting/` (money/types/posting/kreditoren).
+2. ✅ Kreditoren-Beleg → verbuchen → GL Entries (reine Engine + DB-Schicht), verifiziert (`npm run accounting:verify`).
+3. ERPNext-Deployment/Version mit Nutzer klären (§7, Repo `C:\Projekte\GitProjekte\erpnext`), damit der Parity-Harness stehen kann.
+4. REST-Endpunkt für die Kreditoren-Verbuchung (zusammen mit der M4-Frontend-Extraktion).
 
 ## 12. Änderungsprotokoll
 
@@ -302,3 +310,8 @@ Kern-Tabellen (Präfix `fibu_`):
 - **2026-10-30 — M2**: MariaDB-Kernschema (28 Tabellen, `backend/migrations/0001_fibu_core_schema.sql`) aus den
   mailflow-Fibu-Migrationen portiert; idempotenter Seed-Runner (`npm run seed`) mit Testmandant,
   CH-KMU-Kontenplan (56 Konten) und 11 MwSt-Codes. migrate + seed gegen MariaDB verifiziert.
+- **2026-10-30 — M3 (Kern)**: Buchungs-Engine in `backend/src/accounting/` (money/types/posting/kreditoren/index/verify),
+  1:1 aus mailflows `fibu_kreditoren_verbuchen` portiert: Double-Entry-GL, Kreditoren-Beleg → Buchungen
+  (Aufwand/Vorsteuer an Kreditoren 2000), atomare Buchungsnummern (BU-JJJJ-NNNNN), Methoden effektiv/Saldosteuersatz,
+  Gutschrift, FW-Kurs. Verifiziert via `npm run accounting:verify` (4 GL-Zeilen, Salden ausgeglichen, idempotent).
+  Offen: REST-Endpunkt + ERPNext-Parity-Harness.
