@@ -3,7 +3,8 @@
 > Architektur- und Planungsdokument. Stand: 2026-10-30.
 > Dieses Dokument ist die Grundlage für die folgenden Umsetzungs-Sessions.
 > **Fortschritt:** M0 (Plan), M1 (Monorepo & Skelett), M2 (Datenmodell) und M3-Kern (Buchungs-Engine,
-> Kreditoren-Verbuchung) sind umgesetzt — siehe §8/§12.
+> Kreditoren-Verbuchung) sind umgesetzt. Das ERPNext-Paritäts-Orakel läuft und der erste Abgleich
+> (Kreditoren → GL) ist belegt — siehe §7/§8/§12.
 
 ---
 
@@ -239,10 +240,11 @@ Kern-Tabellen (Präfix `fibu_`):
   Idempotenter Seed-Runner (`npm run seed`) mit Testmandant inkl. CH-KMU-Kontenplan (56 Konten) + 11 MwSt-Codes.
   Verifiziert: migrate + seed grün gegen MariaDB, CHECK-Constraints greifen.
 
-- **M3 — Buchungs-Engine (Kern)** 🟡 *(Kern erledigt; ERPNext-Parität offen)*
+- **M3 — Buchungs-Engine (Kern)** 🟡 *(Kern + erste ERPNext-Parität erledigt)*
   GL-Modell + Double-Entry-Posting in `backend/src/accounting/`. Kreditoren-Beleg → verbuchen → GL Entries,
   1:1 aus mailflows `fibu_kreditoren_verbuchen` portiert. Verifiziert via `npm run accounting:verify`.
-  Offen: REST-Endpunkt (mit M4) und ERPNext-Parity-Harness (§7, braucht laufende ERPNext-Instanz).
+  ERPNext-Parität für den Kreditoren-Fall belegt (`npm run accounting:parity`, §7) — identische GL-Salden.
+  Offen: weitere Paritätsfälle (Zahlung/Skonto, Gutschrift, Storno …) und der REST-Endpunkt (mit M4).
 
 - **M4 — Frontend-Extraktion**
   Erste Pages (Kreditoren-Dashboard, Lieferanten, Rechnung erfassen) nach smarterp,
@@ -266,7 +268,7 @@ Kern-Tabellen (Präfix `fibu_`):
 - **PDF/Parser-Utils**: `swissqrbill`, `jspdf`, CAMT/PAIN.001 — laufen clientseitig,
   bleiben größtenteils, brauchen aber Datenanpassung an neue API-Shapes.
 - **React 18 → 19**: Kompatibilität der Pages prüfen.
-- **ERPNext-Instanz**: Bereitstellung/Version noch offen (§7).
+- **ERPNext-Instanz**: ~~Bereitstellung/Version offen~~ **erledigt** — v16.53.0 via `tooling/erpnext-parity/` (Docker), erster Parity-Lauf grün (§7). Quelle `…/erpnext` ist develop/v17 → ggf. später eigenes Image.
 
 ---
 
