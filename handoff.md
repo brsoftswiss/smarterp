@@ -209,13 +209,12 @@ Kern-Tabellen (Präfix `fibu_`):
 - **Chart of Accounts**, **Tax Templates** (MwSt), **Party** (Kunde/Lieferant),
   **Fiscal Year/Period Closing** analog.
 
-**Test-Harness** (`tooling/erpnext-parity/`):
+**Test-Harness** (`backend/src/accounting/parity/`, Lauf: `npm run accounting:parity`):
 1. ✅ Echte ERPNext-Instanz bereitgestellt: `tooling/erpnext-parity/` (Docker, `frappe/erpnext:v16.53.0`, REST unter http://localhost:8081, Login `Administrator`/`admin`).
-2. Satz von Geschäftsfällen definieren (Fixtures): Einkaufsrechnung, Zahlung mit
-   Skonto, Gutschrift, Storno, MwSt-Abrechnung, Jahresabschluss, FW-Kursbewertung …
-3. Jeden Fall in **beiden** Systemen buchen (ERPNext via REST-API, smarterp via eigene API).
-4. Resultierende **GL Entries / Salden** normalisieren und **diffen**.
-5. Abweichungen = Bugs oder bewusste CH-Spezifika (dokumentieren).
+2. ✅ Erster Geschäftsfall (Kreditoren-Einkaufsrechnung) als Fixture definiert (`case.ts`, identisch zu `verify.ts`). Weitere Fälle (Zahlung/Skonto, Gutschrift, Storno, MwSt-Abrechnung, FW-Kursbewertung) folgen.
+3. ✅ Fall in **beiden** Systemen gebucht (ERPNext Purchase Invoice via REST, smarterp via eigene Engine).
+4. ✅ **GL Entries / Salden** normalisiert (ERPNext-Konten → CH-KMU) und **gedifft**.
+5. Abweichungen = Bugs oder bewusste CH-Spezifika (dokumentieren) — für den ersten Fall: **keine** (identische Salden).
 
 **Offene Punkte für die Parität** (später zu klären):
 - ~~ERPNext-Version + Deployment-Weg?~~ **Erledigt**: v16.53.0 via `tooling/erpnext-parity/` (Docker). Die Quelle `C:\Projekte\GitProjekte\erpnext` ist `develop` (v17-dev) → bei Bedarf später eigenes Image daraus.
@@ -299,8 +298,9 @@ Kern-Tabellen (Präfix `fibu_`):
 1. ✅ GL-Modell (Double-Entry) + Posting in `backend/src/accounting/` (money/types/posting/kreditoren).
 2. ✅ Kreditoren-Beleg → verbuchen → GL Entries (reine Engine + DB-Schicht), verifiziert (`npm run accounting:verify`).
 3. ✅ ERPNext-Orakel bereitgestellt (§7, `tooling/erpnext-parity/`, v16.53.0 @ localhost:8081).
-4. Parity-Harness bauen: Kreditoren-Einkaufsrechnung in ERPNext (REST) **und** smarterp buchen, GL Entries normalisieren und diffen; Konten-/Steuer-Mapping CH-KMU ↔ ERPNext-CoA definieren.
-5. REST-Endpunkt für die Kreditoren-Verbuchung (zusammen mit der M4-Frontend-Extraktion).
+4. ✅ Parity-Harness (`backend/src/accounting/parity/`): Kreditoren-Fall in ERPNext + smarterp gebucht, GL-Salden normalisiert und gedifft → **identisch**. Konten-/Steuer-Mapping CH-KMU ↔ ERPNext definiert.
+5. Weitere Paritätsfälle (Zahlung/Skonto, Gutschrift, Storno, MwSt-Abrechnung, FW-Kursbewertung).
+6. REST-Endpunkt für die Kreditoren-Verbuchung (zusammen mit der M4-Frontend-Extraktion).
 
 ## 12. Änderungsprotokoll
 
@@ -320,3 +320,9 @@ Kern-Tabellen (Präfix `fibu_`):
   frappe_docker/pwd.yml mit `frappe/erpnext:v16.53.0`, Frontend-Port 8081 (8080 = Supabase). Instanz läuft,
   REST erreichbar (ping→pong, Login Administrator/admin; frappe 16.54.0 / erpnext 16.53.0). DB/Redis nur
   Compose-intern. Nächster Schritt: Parity-Harness (Kreditoren → GL-Diff).
+- **2026-10-30 — Parity-Harness (§7)**: `backend/src/accounting/parity/` (erpnext.ts REST-Client,
+  case.ts Fall+Mapping, run.ts Orchestrierung) + Skript `npm run accounting:parity`. Bucht die
+  Kreditoren-Einkaufsrechnung in ERPNext (Purchase Invoice, per-Item-Vorsteuer 8.1/2.6 %) und in
+  smarterp, normalisiert die GL-Salden (ERPNext-Konten → CH-KMU, beide VAT-Konten → Vorsteuer 1170)
+  und difft sie: **identisch** (6500 +100.00, 6600 +50.00, 1170 +9.40, 2000 −159.40). Erste belegte
+  ERPNext-Parität.

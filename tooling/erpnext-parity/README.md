@@ -62,13 +62,33 @@ POST /api/resource/Purchase Invoice      # Beleg anlegen (+ submit)
 GET  /api/resource/GL Entry?filters=[["voucher_no","=","<name>"]]&fields=["account","debit","credit"]
 ```
 
-## Geplanter Abgleich (erster Fall)
+## Harness ausführen
 
-Kreditoren-Einkaufsrechnung analog zu `backend/src/accounting/verify.ts`:
+Der erste Paritätsfall (Kreditoren-Einkaufsrechnung) ist umgesetzt:
 
-1. In ERPNext: Lieferant + Konten + Steuer-Template anlegen, Purchase Invoice buchen.
-2. In smarterp: denselben Beleg über die eigene Engine verbuchen.
-3. GL Entries beider Systeme auf `{konto, soll, haben}` normalisieren und diffen.
+```bash
+npm run accounting:parity -w @smarterp/backend
+```
 
-> Das Konten-/Steuer-Mapping CH-KMU ↔ ERPNext-CoA ist noch offen (§7, §9) und wird
-> hier beim Aufbau des Harness definiert.
+Bucht denselben Fall in beiden Systemen und vergleicht die GL-Salden:
+
+- **ERPNext**: Purchase Invoice (2 Positionen 6500/6600, Vorsteuer 8.1 % / 2.6 %) via REST,
+  submit, GL Entries lesen.
+- **smarterp**: Demo-Beleg über die eigene Engine (`postKreditorenBeleg`).
+- **Normalisierung**: ERPNext-Konten → CH-KMU-Nummern, Beträge als Rappen, Soll−Haben je Konto.
+
+Code: `backend/src/accounting/parity/` — `erpnext.ts` (REST-Client), `case.ts` (Fall + Mapping),
+`run.ts` (Orchestrierung). ENV optional: `ERPNEXT_URL`, `ERPNEXT_COMPANY`,
+`ERPNEXT_API_KEY`/`ERPNEXT_API_SECRET`, `ERPNEXT_USER`/`ERPNEXT_PASSWORD` (Default
+http://localhost:8081, Comp1, Administrator/admin).
+
+Verifiziert: **identische Salden** — 6500 +100.00, 6600 +50.00, 1170 +9.40, 2000 −159.40.
+
+### Mapping CH-KMU ↔ ERPNext
+
+- Aufwand **6500/6600** → ERPNext-Konten mit gleicher `account_number` (werden bei Bedarf angelegt).
+- Vorsteuer **1170** → ERPNext-VAT-Konten (VAT 8.1 % / 2.6 % / 3.8 %), **many-to-one**.
+- Kreditoren **2000** → `Creditors`.
+
+Die ERPNext-Firma (CHF, Switzerland) bringt die VAT-Konten aus dem Kontenrahmen bereits mit;
+Aufwandskonten, Item-Tax-Templates, Service-Items und Lieferant legt der Harness idempotent an.
